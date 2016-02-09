@@ -53,7 +53,7 @@ def strings(reader, fileids=None):
         fulltweets = reader.docs(fileids)
         tweets = []
         for jsono in fulltweets:
-            print jsono
+            #print jsono
             if isinstance(jsono, list):
                 jsono = jsono[0]
             try:
