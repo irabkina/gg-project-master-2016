@@ -4,7 +4,7 @@ OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'bes
 path = 'tweets/*.json'
 global strings
 global tokens
-#comment to check whether I can commit
+
 
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
