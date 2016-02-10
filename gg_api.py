@@ -1,23 +1,42 @@
-import nltk;
+import nltk
+import re
+import json
+
+from nltk.tokenize import wordpunct_tokenize
+from collections import Counter
 
 OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
 path = 'tweets'
-global strings_2013
-global strings_2015
-global tokens_2013
-global tokens_2015
+
+yearMap = {}
+reader = None
+docs = None
+
 
 
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
-    # Your code here
+    strings = yearMap[year]['strings']
+    hostPattern = re.compile(r'hosts?', re.IGNORECASE)
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*', re.IGNORECASE) # ?([A-Z]\w*)?
+
+    host_mentions = Counter()
+    for tweet in strings:
+        if re.search(hostPattern, tweet):
+            matches = re.findall(namePattern, tweet)
+            matches = (w.lower() for w in matches)
+            for match in matches:
+                host_mentions[match] += 1
+
+    hosts = host_mentions.most_common(10)
     return hosts
 
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
     # Your code here
+    awards = []
     return awards
 
 def get_nominees(year):
@@ -25,6 +44,7 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     # Your code here
+    nominees = []
     return nominees
 
 def get_winners(year):
@@ -32,6 +52,7 @@ def get_winners(year):
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
+    winners = []
     return winners
 
 def get_presenters(year):
@@ -39,31 +60,55 @@ def get_presenters(year):
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
+    presenters = []
     return presenters
 
 def strings(reader, fileids=None):
-        """
-        Returns only the text content of Tweets in the file(s)
-
-        :return: the given file(s) as a list of Tweets.
-        :rtype: list(str)
-        """
-
+        # """
+        # Returns only the text content of Tweets in the file(s)
+        #
+        # :return: the given file(s) as a list of Tweets.
+        # :rtype: list(str)
+        # """
+        #
+        #
+        #
+        #
         # NOTE: adapted from TwitterCorpusReader.strings
-        fulltweets = reader.docs(fileids)
+        global docs
+        if docs is None:
+            docs = reader.docs(fileids)
+        print len(docs)
         tweets = []
-        for jsono in fulltweets:
+        for jsono in docs:
             #print jsono
             if isinstance(jsono, list):
                 jsono = jsono[0]
             try:
                 text = jsono['text']
                 if isinstance(text, bytes):
-                    text = text.decode(self.encoding)
+                    text = text.decode(reader.encoding)
                 tweets.append(text)
             except KeyError:
                 pass
         return tweets
+
+
+def jsonStrings (fileid):
+    # using json libraries
+    strings = []
+    with open(fileid) as f:
+        jsons = json.load(f)
+    for item in jsons:
+        text = item['text']
+        strings.append(text)
+    return strings
+
+def jsonTokenizer(tweets):
+    tokens = []
+    for tweet in tweets:
+        tokens.append(wordpunct_tokenize(tweet))
+    return tokens
 
 def tokenized(reader, strings):
     # NOTE: adapted from TwitterCorpusReader.strings
@@ -83,16 +128,22 @@ def pre_ceremony():
     plain text file. It is the first thing the TA will run when grading.
     Do NOT change the name of this function or what it returns.'''
     # Your code here
-    reader = nltk.corpus.reader.twitter.TwitterCorpusReader(root=path, fileids = ['gg2013.json', 'gg2015.json'])
+    # global reader
+    # reader = nltk.corpus.reader.twitter.TwitterCorpusReader(root=path, fileids = ['gg2013.json', 'gg2015.json'])
+    global yearMap
     print "finished creating reader"
-    strings_2013 = strings(reader, 'gg2013.json')
+    yearMap[2013] = {}
+    yearMap[2015] = {}
+    yearMap[2013]['strings'] = 'testing'
+    print yearMap[2013]['strings']
+    yearMap[2013]['strings'] = jsonStrings('tweets/gg2013.json')
     print "finished creating 2013 strings"
-    strings_2015 = strings(reader, 'gg2015.json')
-    print "finished creating 2015 strings"
-    tokens_2013 = tokenized(reader, strings_2013)
+    # yearMap[2015]['strings'] = jsonStrings('tweets/gg2015.json')
+    # print "finished creating 2015 strings"
+    yearMap[2013]['tokens'] = jsonTokenizer(yearMap[2013]['strings'])
     print "finished creating 2013 tokens"
-    tokens_2015 = tokenized(reader, strings_2015)
-    print "Pre-ceremony processing complete."
+    # yearMap[2015]['tokens'] = jsonTokenizer(yearMap[2015]['strings'])
+    # print "Pre-ceremony processing complete."
     return
 
 def main():
@@ -102,6 +153,9 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
+    pre_ceremony()
+    print get_hosts(2013)
+    print yearMap[2013]['tokens'][0]
     return
 
 if __name__ == '__main__':
