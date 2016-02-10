@@ -56,36 +56,46 @@ def get_nominees(year):
     nom_patterns.append(re.compile(r'gonna win', re.IGNORECASE))
 
     # patterns for awards
-    award_patterns['cecil b. demille award'] = [re.compile(r'cecil.*award'), re.compile(r'demille.*award')]
-    award_patterns['best motion picture - drama'] = [re.compile(r'best ((film)|(movie)|(motion picture)).*drama')]
-    award_patterns['best performance by an actress in a motion picture - drama'] = [re.compile(r'best actress.*((film)|(movie)|(motion picture)).*drama')]
-    award_patterns['best performance by an actor in a motion picture - drama'] = [re.compile(r'best actor.*((film)|(movie)|(motion picture)).*drama')]
-    award_patterns['best motion picture - comedy or musical'] = [re.compile(r'best ((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
-    award_patterns['best performance by an actress in a motion picture - comedy or musical'] = [re.compile(r'best actress.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
-    award_patterns['best performance by an actor in a motion picture - comedy or musical'] = [re.compile(r'best actor.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
-    award_patterns['best animated feature film'] = [re.compile(r'best animated ((film)|(movie)|(motion picture))')]
-    award_patterns['best foreign language film'] = [re.compile(r'best foreign (language )?((film)|(movie)|(motion picture))')]
-    award_patterns['best performance by an actress in a supporting role in a motion picture'] = [re.compile(r'best supporting actress.*((film)|(movie)|(motion picture))')]
-    award_patterns['best performance by an actor in a supporting role in a motion picture'] = [re.compile(r'best supporting actor.*((film)|(movie)|(motion picture))')]
-    award_patterns['best director - motion picture'] = [re.compile(r'best director.*((film)|(movie)|(motion picture))')]
-    award_patterns['best screenplay - motion picture'] = [re.compile(r'best screenplay.*((film)|(movie)|(motion picture))')]
-    award_patterns['best original score - motion picture'] = [re.compile(r'best (original )?score.*((film)|(movie)|(motion picture))')]
-    award_patterns['best original song - motion picture'] = [re.compile(r'best (original )?song.*((film)|(movie)|(motion picture))')]
-    award_patterns['best television series - drama'] = [re.compile(r'best ((television )|(tv ))series.*drama)']
-    award_patterns['best performance by an actress in a television series - drama'] = [re.compile(r'best actress.*((television)|(tv)).*series.*drama')]
-    award_patterns['best performance by an actor in a television series - drama'] = [re.compile(r'best actor.*((television)|(tv)).*series.*drama')]
-    award_patterns['best television series - comedy or musical'] = [re.compile(r'best ((television )|(tv ))series.*((comedy)|(musical))')]
-    award_patterns['best performance by an actress in a television series - comedy or musical'] = [re.compile(r'best actress.*((television)|(tv)).*series.*((comedy)|(musical))')]
-    award_patterns['best performance by an actor in a television series - comedy or musical'] = [re.compile(r'best actor.*((television)|(tv)).*series.*((comedy)|(musical))')]
-    award_patterns['best mini-series or motion picture made for television'] = [re.compile(r'best.*((mini-series)|(made for))')]
-    award_patterns['best performance by an actor in a mini-series or motion picture made for television'] = [re.compile(r'best actor.*((mini-series)|(made for))')]
-    award_patterns['best performance by an actress in a mini-series or motion picture made for television'] = [re.compile(r'best actress.*((mini-series)|(made for))')]
-    award_patterns['best performance by an actress in a supporting role in a series, mini-series or motion picture made for television'] = [re.compile(r'best supporting actress.*((mini-series)|(made for))')]
-    award_patterns['best performance by an actor in a supporting role in a series, mini-series or motion picture made for television'] = [re.compile(r'best supporting actor.*((mini-series)|(made for))')]
+    award_patterns['cecil b. demille award'] = re.compile(r'((cecil)|(demille)).*award', re.IGNORECASE)
+    award_patterns['best motion picture - drama'] = re.compile(r'best ((film)|(movie)|(motion picture)).*drama', re.IGNORECASE)
+    award_patterns['best performance by an actress in a motion picture - drama'] = re.compile(r'best actress.*((film)|(movie)|(motion picture)).*drama', re.IGNORECASE)
+    award_patterns['best performance by an actor in a motion picture - drama'] = re.compile(r'best actor.*((film)|(movie)|(motion picture)).*drama', re.IGNORECASE)
+    award_patterns['best motion picture - comedy or musical'] = re.compile(r'best ((film)|(movie)|(motion picture)).*((comedy)|(musical)))', re.IGNORECASE)
+    award_patterns['best performance by an actress in a motion picture - comedy or musical'] = re.compile(r'best actress.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))', re.IGNORECASE)
+    award_patterns['best performance by an actor in a motion picture - comedy or musical'] = re.compile(r'best actor.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))', re.IGNORECASE)
+    award_patterns['best animated feature film'] = re.compile(r'best animated ((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best foreign language film'] = re.compile(r'best foreign (language )?((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best performance by an actress in a supporting role in a motion picture'] = re.compile(r'best supporting actress.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best performance by an actor in a supporting role in a motion picture'] = re.compile(r'best supporting actor.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best director - motion picture'] = re.compile(r'best director.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best screenplay - motion picture'] = re.compile(r'best screenplay.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best original score - motion picture'] = re.compile(r'best (original )?score.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best original song - motion picture'] = re.compile(r'best (original )?song.*((film)|(movie)|(motion picture))', re.IGNORECASE)
+    award_patterns['best television series - drama'] = re.compile(r'best ((television )|(tv ))series.*drama)', re.IGNORECASE)
+    award_patterns['best performance by an actress in a television series - drama'] = re.compile(r'best actress.*((television)|(tv)).*series.*drama', re.IGNORECASE)
+    award_patterns['best performance by an actor in a television series - drama'] = re.compile(r'best actor.*((television)|(tv)).*series.*drama', re.IGNORECASE)
+    award_patterns['best television series - comedy or musical'] = re.compile(r'best ((television )|(tv ))series.*((comedy)|(musical))', re.IGNORECASE)
+    award_patterns['best performance by an actress in a television series - comedy or musical'] = re.compile(r'best actress.*((television)|(tv)).*series.*((comedy)|(musical))', re.IGNORECASE)
+    award_patterns['best performance by an actor in a television series - comedy or musical'] = re.compile(r'best actor.*((television)|(tv)).*series.*((comedy)|(musical))', re.IGNORECASE)
+    award_patterns['best mini-series or motion picture made for television'] = re.compile(r'best.*((mini-series)|(made for))', re.IGNORECASE)
+    award_patterns['best performance by an actor in a mini-series or motion picture made for television'] = re.compile(r'best actor.*((mini-series)|(made for))', re.IGNORECASE)
+    award_patterns['best performance by an actress in a mini-series or motion picture made for television'] = re.compile(r'best actress.*((mini-series)|(made for))', re.IGNORECASE)
+    award_patterns['best performance by an actress in a supporting role in a series, mini-series or motion picture made for television'] = re.compile(r'best supporting actress.*((mini-series)|(made for))', re.IGNORECASE)
+    award_patterns['best performance by an actor in a supporting role in a series, mini-series or motion picture made for television'] = re.compile(r'best supporting actor.*((mini-series)|(made for))', re.IGNORECASE)
 
-    #TODO: get nominees, and match to awards
+    nominees = {}
+    for tweet in strings:
+        for award in award_patterns.keys():
+            if award not in nominees.keys():
+                nominees[award] = []
+            pat = award_patterns[award]
+            if re.search(pat, tweet):
+                matches = re.findall(namePattern, tweet)
+                matches = (w.lower() for w in matches)
+            for match in matches:
+                nominees[award].append(match)
 
-    nominees = []
+    
     return nominees
 
 def get_winners(year):
