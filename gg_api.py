@@ -40,7 +40,7 @@ def get_awards(year):
     return awards
 
 def get_nominees(year):
-    '''Nominees is a list of dictionaries with the hard coded award
+    '''Nominees is a dictionary with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     # Your code here
@@ -89,8 +89,8 @@ def get_nominees(year):
     return nominees
 
 def get_winners(year):
-    '''Winners is a list of dictionaries with the hard coded award
-    names as keys, and each entry a list containing a single string.
+    '''Winners is a dictionary with the hard coded award
+    names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
     strings = yearMap[year]['strings']
     nominees = get_nominees(year)
@@ -134,7 +134,7 @@ def get_winners(year):
     return winner_dict
 
 def get_presenters(year):
-    '''Presenters is a list of dictionaries with the hard coded award
+    '''Presenters is a dictionary with the hard coded award
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
