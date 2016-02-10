@@ -19,7 +19,7 @@ def get_hosts(year):
     of this function or what it returns.'''
     strings = yearMap[year]['strings']
     hostPattern = re.compile(r'hosts?', re.IGNORECASE)
-    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*', re.IGNORECASE) # ?([A-Z]\w*)?
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
 
     host_mentions = Counter()
     for tweet in strings:
@@ -44,6 +44,47 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     # Your code here
+    strings = yearMap[year]['strings']
+    nom_patterns = []
+    award_patterns = {}
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*')
+
+    # patterns for finding nominees
+    nom_patterns.append(re.compile(r'nom', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'should.*w[io]n', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'will win', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'gonna win', re.IGNORECASE))
+
+    # patterns for awards
+    award_patterns['cecil b. demille award'] = [re.compile(r'cecil.*award'), re.compile(r'demille.*award')]
+    award_patterns['best motion picture - drama'] = [re.compile(r'best ((film)|(movie)|(motion picture)).*drama')]
+    award_patterns['best performance by an actress in a motion picture - drama'] = [re.compile(r'best actress.*((film)|(movie)|(motion picture)).*drama')]
+    award_patterns['best performance by an actor in a motion picture - drama'] = [re.compile(r'best actor.*((film)|(movie)|(motion picture)).*drama')]
+    award_patterns['best motion picture - comedy or musical'] = [re.compile(r'best ((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
+    award_patterns['best performance by an actress in a motion picture - comedy or musical'] = [re.compile(r'best actress.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
+    award_patterns['best performance by an actor in a motion picture - comedy or musical'] = [re.compile(r'best actor.*((film)|(movie)|(motion picture)).*((comedy)|(musical)))')]
+    award_patterns['best animated feature film'] = [re.compile(r'best animated ((film)|(movie)|(motion picture))')]
+    award_patterns['best foreign language film'] = [re.compile(r'best foreign (language )?((film)|(movie)|(motion picture))')]
+    award_patterns['best performance by an actress in a supporting role in a motion picture'] = [re.compile(r'best supporting actress.*((film)|(movie)|(motion picture))')]
+    award_patterns['best performance by an actor in a supporting role in a motion picture'] = [re.compile(r'best supporting actor.*((film)|(movie)|(motion picture))')]
+    award_patterns['best director - motion picture'] = [re.compile(r'best director.*((film)|(movie)|(motion picture))')]
+    award_patterns['best screenplay - motion picture'] = [re.compile(r'best screenplay.*((film)|(movie)|(motion picture))')]
+    award_patterns['best original score - motion picture'] = [re.compile(r'best (original )?score.*((film)|(movie)|(motion picture))')]
+    award_patterns['best original song - motion picture'] = [re.compile(r'best (original )?song.*((film)|(movie)|(motion picture))')]
+    award_patterns['best television series - drama'] = [re.compile(r'best ((television )|(tv ))series.*drama)']
+    award_patterns['best performance by an actress in a television series - drama'] = [re.compile(r'best actress.*((television)|(tv)).*series.*drama')]
+    award_patterns['best performance by an actor in a television series - drama'] = [re.compile(r'best actor.*((television)|(tv)).*series.*drama')]
+    award_patterns['best television series - comedy or musical'] = [re.compile(r'best ((television )|(tv ))series.*((comedy)|(musical))')]
+    award_patterns['best performance by an actress in a television series - comedy or musical'] = [re.compile(r'best actress.*((television)|(tv)).*series.*((comedy)|(musical))')]
+    award_patterns['best performance by an actor in a television series - comedy or musical'] = [re.compile(r'best actor.*((television)|(tv)).*series.*((comedy)|(musical))')]
+    award_patterns['best mini-series or motion picture made for television'] = [re.compile(r'best.*((mini-series)|(made for))')]
+    award_patterns['best performance by an actor in a mini-series or motion picture made for television'] = [re.compile(r'best actor.*((mini-series)|(made for))')]
+    award_patterns['best performance by an actress in a mini-series or motion picture made for television'] = [re.compile(r'best actress.*((mini-series)|(made for))')]
+    award_patterns['best performance by an actress in a supporting role in a series, mini-series or motion picture made for television'] = [re.compile(r'best supporting actress.*((mini-series)|(made for))')]
+    award_patterns['best performance by an actor in a supporting role in a series, mini-series or motion picture made for television'] = [re.compile(r'best supporting actor.*((mini-series)|(made for))')]
+
+    #TODO: get nominees, and match to awards
+
     nominees = []
     return nominees
 
@@ -51,9 +92,46 @@ def get_winners(year):
     '''Winners is a list of dictionaries with the hard coded award
     names as keys, and each entry a list containing a single string.
     Do NOT change the name of this function or what it returns.'''
-    # Your code here
-    winners = []
-    return winners
+    strings = yearMap[year]['strings']
+    nominees = get_nominees(year)
+
+    patterns = {}
+    for lst in nominees.values():
+        for nom in lst:
+            pats = []
+            pats.append(re.compile(r'best.*actor.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*actress.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*movie.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*film.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*show.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*director.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*screenplay.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best original.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'best.*series.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'cecil.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(r'demille.*'+nom, re.IGNORECASE))
+            pats.append(re.compile(nom+r'.*w[io]n[s].*', re.IGNORECASE))
+            pats.append(re.compile(r'congrat.*'+nom, re.IGNORECASE))
+            patterns[nom] = pats
+
+    noms_mentions = Counter()
+    for tweet in strings:
+        for nom in patterns.keys():
+            for pat in patterns[nom]:
+                if re.search(pat, tweet):
+                    noms_mentions[nom]+=1
+
+    winner_dict = {}
+    for award in nominees.keys():
+        bestCount = 0
+        winner = ""
+        for n in nominees[award]:
+            if noms_mentions[n] > bestCount:
+                winner = n
+                bestCount = noms_mentions[n]
+        winner_dict[award] = winner
+
+    return winner_dict
 
 def get_presenters(year):
     '''Presenters is a list of dictionaries with the hard coded award
