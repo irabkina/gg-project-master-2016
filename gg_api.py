@@ -319,15 +319,72 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
+    print "Welcome to the Golden Globes API. Please wait."
+    
     pre_ceremony()
-    #print get_hosts(2013)
-    #print yearMap[2013]['tokens'][0]
-    #print get_winners(2013)
-    print get_nominees(2013)
-    #get_awards(2013)
-    #global awardTweets
-    #print awardTweets.keys()[:10]
+
+    print "Ok, I'm ready." 
+    year = get_year()
+    
+    while True:
+        print "We will be looking at " + year + ". \n What would you like to do?"
+        print "1: Get award names"
+        print "2: Get nominees"
+        print "3: Get winners"
+        print "4: Get host(s)"
+        print "5: Get presenters"
+        print "6: Change year"
+        print "7: Exit"
+
+        choices = ["1","2","3","4","5","6", "7"]
+
+        func = raw_input("Enter choice number: ")
+        while func not in choices:
+            func = raw_input("Please enter a number 1-7: ")  
+
+        result = 0
+        if func == "1":
+            result = award_names(int(year))
+            continue
+        elif func == "2":
+            result = get_nominees(int(year))
+            continue
+        elif func == "3":
+            result = get_winners(int(year))
+        elif func == "4":
+            result = get_hosts(int(year))
+        elif func == "5":
+            result = get_presenters(int(year))
+        elif func == "6":
+            year = get_year()
+        elif func == "6":
+            result = get_year()
+        elif func == "7":
+            break
+
+        if result != 0:
+            if isinstance(result, dict):
+                print_dict(result)
+            elif isinstance(result, list):
+                print_list(result)
+
     return
+
+def print_dict(d):
+    for (k,v) in d:
+        print k + ": \n" + print_list(v)
+
+def print_list(l):
+    for x in l:
+        print "\t"+x+"\n"
+
+def get_year():
+    year = raw_input("What year would you like me to look into? \n")
+    
+    while year != "2013" and year != "2015":
+         year = raw_input("Sorry, that year isn't valid. Please enter 2013 or 2015. What year would you like me to look into? \n")
+    
+    return year
 
 if __name__ == '__main__':
     main()
