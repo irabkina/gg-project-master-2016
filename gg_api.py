@@ -37,6 +37,44 @@ def get_awards(year):
     of this function or what it returns.'''
     # Your code here
     awards = []
+    strings = yearMap[year]['strings']
+    genAwardPattern = re.compile(r'(best .*)(drama|musical|film|picture|television)', re.IGNORECASE)
+    award_mentions = Counter()
+
+    for tweet in strings:
+        match = re.findall(genAwardPattern, tweet)
+        # matches = [m for m in match]
+        match = (w[0].lower()+w[1].lower() for w in match)
+        for m in match:
+            award_mentions[m] += 1
+
+    awards_tuples = award_mentions.most_common()
+
+    comma = re.compile(r',')
+
+    awards_tuples = [a for a in awards_tuples 
+    if not re.search(comma,a[0])]
+
+    awards_tokenized = jsonTokenizer([a[0] for a in awards_tuples])
+
+    awards_sets = [set(a) for a in awards_tokenized]
+
+    awards = []
+
+    for i in range(len(awards_sets)):
+        include = True
+        for j in range(len(awards_sets)):
+            if awards_sets[i] < awards_sets[j] and awards_tuples[j][1] > 1:
+                awards_tuples[j] = (awards_tuples[j][0], awards_tuples[i][1]+awards_tuples[j][1])
+                include = False
+                break
+        if include:
+            awards.append(awards_tuples[i])
+
+    awards.sort(reverse=True, key=lambda x: x[1])
+
+    awards = awards
+
     return awards
 
 def get_nominees(year):
@@ -152,6 +190,9 @@ def get_presenters(year):
     name of this function or what it returns.'''
     # Your code here
     presenters = []
+
+
+
     return presenters
 
 def strings(reader, fileids=None):
@@ -201,6 +242,14 @@ def jsonTokenizer(tweets):
         tokens.append(wordpunct_tokenize(tweet))
     return tokens
 
+def tokenizeNoPunctuation(tweets):
+    tokens = []
+    stoplist = [',', '(', ')', '.', '?', '/', '-', '+', ':', ';']
+    for tweet in tweets:
+        tokenized = wordpunct_tokenize(tweet)
+        tokens.append([token for token in tokenized if token not in stoplist])
+    return tokens
+
 def tokenized(reader, strings):
     # NOTE: adapted from TwitterCorpusReader.strings
         """
@@ -229,12 +278,12 @@ def pre_ceremony():
     print yearMap[2013]['strings']
     yearMap[2013]['strings'] = jsonStrings('tweets/gg2013.json')
     print "finished creating 2013 strings"
-    # yearMap[2015]['strings'] = jsonStrings('tweets/gg2015.json')
-    # print "finished creating 2015 strings"
-    yearMap[2013]['tokens'] = jsonTokenizer(yearMap[2013]['strings'])
-    print "finished creating 2013 tokens"
-    # yearMap[2015]['tokens'] = jsonTokenizer(yearMap[2015]['strings'])
-    # print "Pre-ceremony processing complete."
+    #yearMap[2015]['strings'] = jsonStrings('tweets/gg2015.json')
+    #print "finished creating 2015 strings"
+    #yearMap[2013]['tokens'] = jsonTokenizer(yearMap[2013]['strings'])
+    #print "finished creating 2013 tokens"
+    #yearMap[2015]['tokens'] = jsonTokenizer(yearMap[2015]['strings'])
+    print "Pre-ceremony processing complete."
     return
 
 def main():
@@ -247,8 +296,7 @@ def main():
     pre_ceremony()
     #print get_hosts(2013)
     #print yearMap[2013]['tokens'][0]
-    noms =  get_nominees(2013)
-    print noms
+    print get_winners(2013)
     return
 
 if __name__ == '__main__':
