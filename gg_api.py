@@ -368,6 +368,8 @@ def main():
             elif isinstance(result, list):
                 print_list(result)
 
+        print "\n"
+
     return
 
 def print_dict(d):
