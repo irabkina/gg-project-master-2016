@@ -1,4 +1,5 @@
 import nltk
+from nltk.corpus import stopwords
 import re
 import json
 
@@ -14,12 +15,43 @@ docs = None
 #award names mapped to list of tweet indices about that award
 awardTweets = {}
 
+tweetsSortedByAward = {}
+
 # For finding presenters, when we find a tweet we think is related to an award, pick from the official award list which
 # award the tweet relates to.  This way we can later search just the related tweets for "present" or "envelope" and a
 # name.
 
 # alternatively we can associate our determined award names (rather than the official ones) with the tweets for the
 # same reason.
+
+def sortTweets(year):
+    global tweetsSortedByAward
+    strings = yearMap[year]['strings']
+    isAwardPattern = re.compile(r'best|award', re.IGNORECASE)
+    # remove stoplisted words from the sets we will compare to the tweets, and then make a set out of these tokenized versions
+    awardSets = (set(w for w in lst if w not in nltk.stopwords) for lst in jsonTokenizer(OFFICIAL_AWARDS))
+
+
+    for j in range(len(strings)):
+        tweet = strings[j]
+        if re.search(isAwardPattern, tweet):
+            tweetTokenized = [w.lower() for w in wordpunct_tokenize(tweet)]
+            max = 0
+            bestIndex = -1
+            tweetSet = set(tweetTokenized)
+            for i in range(len(awardSets)):
+                currLen = len(tweetSet & awardSets[i])
+                if currLen > max:
+                    max = currLen
+                    bestIndex = i
+            if bestIndex != -1:
+                try:
+                    tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]]
+                except KeyError:
+                    tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]] = []
+                tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]].append(j)
+    return
+
 
 
 def get_hosts(year):
@@ -256,6 +288,7 @@ def jsonStrings (fileid):
         strings.append(text)
     return strings
 
+# Takes a list of tweet strings and returns a list of tokenized lists
 def jsonTokenizer(tweets):
     tokens = []
     for tweet in tweets:
