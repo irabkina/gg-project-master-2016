@@ -11,7 +11,15 @@ path = 'tweets'
 yearMap = {}
 reader = None
 docs = None
+#award names mapped to list of tweet indices about that award
+awardTweets = {}
 
+# For finding presenters, when we find a tweet we think is related to an award, pick from the official award list which
+# award the tweet relates to.  This way we can later search just the related tweets for "present" or "envelope" and a
+# name.
+
+# alternatively we can associate our determined award names (rather than the official ones) with the tweets for the
+# same reason.
 
 
 def get_hosts(year):
@@ -37,23 +45,34 @@ def get_awards(year):
     of this function or what it returns.'''
     # Your code here
     awards = []
+    global awardTweets
     strings = yearMap[year]['strings']
     genAwardPattern = re.compile(r'(best .*)(drama|musical|film|picture|television)', re.IGNORECASE)
     award_mentions = Counter()
 
-    for tweet in strings:
-        match = re.findall(genAwardPattern, tweet)
+    for i in range(len(strings)):
+        match = re.findall(genAwardPattern, strings[i])
         # matches = [m for m in match]
         match = (w[0].lower()+w[1].lower() for w in match)
         for m in match:
+            try:
+                awardTweets[m]
+            except KeyError:
+                awardTweets[m] = []
+            awardTweets[m].append(i)
             award_mentions[m] += 1
 
     awards_tuples = award_mentions.most_common()
 
-    comma = re.compile(r',')
+    comma = re.compile(r',|\"|\'')
+    awards_tuples_filter = []
+    for a in awards_tuples:
+        if not re.search(comma, a[0]):
+            awards_tuples_filter.append(a)
+        else:
+            del awardTweets[a[0]]
 
-    awards_tuples = [a for a in awards_tuples 
-    if not re.search(comma,a[0])]
+    awards_tuples = awards_tuples_filter
 
     awards_tokenized = jsonTokenizer([a[0] for a in awards_tuples])
 
@@ -66,6 +85,7 @@ def get_awards(year):
         for j in range(len(awards_sets)):
             if awards_sets[i] < awards_sets[j] and awards_tuples[j][1] > 1:
                 awards_tuples[j] = (awards_tuples[j][0], awards_tuples[i][1]+awards_tuples[j][1])
+                awardTweets[awards_tuples[j][0]] += awardTweets[awards_tuples[i][0]]
                 include = False
                 break
         if include:
@@ -296,7 +316,10 @@ def main():
     pre_ceremony()
     #print get_hosts(2013)
     #print yearMap[2013]['tokens'][0]
-    print get_winners(2013)
+    #print get_winners(2013)
+    get_awards(2013)
+    global awardTweets
+    print awardTweets.keys()[:10]
     return
 
 if __name__ == '__main__':
