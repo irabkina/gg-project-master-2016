@@ -12,12 +12,12 @@ path = 'tweets'
 yearMap = {}
 reader = None
 docs = None
-#award names mapped to list of tweet indices about that award
-awardTweets = {}
 # all the nominees
 all_nominees = {}
 all_presenters = {}
 
+
+#award names mapped to list of tweet indices about that award
 tweetsSortedByAward = {}
 
 # For finding presenters, when we find a tweet we think is related to an award, pick from the official award list which
@@ -27,19 +27,23 @@ tweetsSortedByAward = {}
 # alternatively we can associate our determined award names (rather than the official ones) with the tweets for the
 # same reason.
 
+# If a tweet has to do with an award (matches the word "best" and one other word) then finds the most similar award name
+# and puts the tweet index in a list attached to that award, in the dictionary tweetsSortedByAward.
 def sortTweets(year):
     global tweetsSortedByAward
+    tweetsSortedByAward = {}
+
     strings = yearMap[year]['strings']
     isAwardPattern = re.compile(r'best|award', re.IGNORECASE)
     # remove stoplisted words from the sets we will compare to the tweets, and then make a set out of these tokenized versions
-    awardSets = (set(w for w in lst if w not in nltk.stopwords) for lst in jsonTokenizer(OFFICIAL_AWARDS))
+    awardSets = [set(w for w in lst if w not in stopwords.words('english') and w is not "-") for lst in jsonTokenizer(OFFICIAL_AWARDS)]
 
 
     for j in range(len(strings)):
         tweet = strings[j]
         if re.search(isAwardPattern, tweet):
             tweetTokenized = [w.lower() for w in wordpunct_tokenize(tweet)]
-            max = 0
+            max = 1
             bestIndex = -1
             tweetSet = set(tweetTokenized)
             for i in range(len(awardSets)):
@@ -80,7 +84,6 @@ def get_awards(year):
     of this function or what it returns.'''
     # Your code here
     awards = []
-    global awardTweets
     strings = yearMap[year]['strings']
     genAwardPattern = re.compile(r'(best .*)(drama|musical|film|picture|television)', re.IGNORECASE)
     award_mentions = Counter()
@@ -90,11 +93,7 @@ def get_awards(year):
         # matches = [m for m in match]
         match = (w[0].lower()+w[1].lower() for w in match)
         for m in match:
-            try:
-                awardTweets[m]
-            except KeyError:
-                awardTweets[m] = []
-            awardTweets[m].append(i)
+
             award_mentions[m] += 1
 
     awards_tuples = award_mentions.most_common()
@@ -104,8 +103,6 @@ def get_awards(year):
     for a in awards_tuples:
         if not re.search(comma, a[0]):
             awards_tuples_filter.append(a)
-        else:
-            del awardTweets[a[0]]
 
     awards_tuples = awards_tuples_filter
 
@@ -120,7 +117,6 @@ def get_awards(year):
         for j in range(len(awards_sets)):
             if awards_sets[i] < awards_sets[j] and awards_tuples[j][1] > 1:
                 awards_tuples[j] = (awards_tuples[j][0], awards_tuples[i][1]+awards_tuples[j][1])
-                awardTweets[awards_tuples[j][0]] += awardTweets[awards_tuples[i][0]]
                 include = False
                 break
         if include:
@@ -133,8 +129,13 @@ def get_awards(year):
     return awards
 
 def get_all(year):
+    global all_nominees
+    global all_presenters
     if len(list(all_nominees))>0:
         return
+
+    sortTweets(year)
+
     strings = yearMap[year]['strings']
     nom_patterns = []
     pres_patterns = []
@@ -156,12 +157,14 @@ def get_all(year):
     noms = {}
     preses = {}
 
-    for award in awardTweets.keys():
+    for award in tweetsSortedByAward.keys():
         noms[award] = Counter()
-        tweets = awardTweets[award]
+        preses[award] = Counter()
+        tweets = tweetsSortedByAward[award]
 
-        for tweet in tweets:
+        for index in tweets:
             # get nominees
+            tweet = strings[index]
             for pat in nom_patterns:
                 if re.search(pat, tweet):
                     matches = re.findall(namePattern, tweet)
@@ -175,42 +178,48 @@ def get_all(year):
                     matches = re.findall(namePattern, tweet)
                     matches = (w.lower() for w in matches)
                     for match in matches:
+
                         preses[award][match]+=1
 
 
     nominees = {}
     presenters = {}
     for award in noms.keys():
-        counter = 10
         award_noms = []
-        while len(award_noms)<5:
-            curr_noms = noms[award].most_common(counter)
-            for n in curr_noms:
-                add = True
-                for w in stoplist:
-                    if w in n:
-                        add = False
-                        break
-                if add:
-                    award_noms.append(n)
-                counter+=10
-        nominees[award]=award_noms
+        curr_noms = noms[award].most_common()
+        for n in curr_noms:
+            add = True
+            tokens = wordpunct_tokenize(n[0])
+            for token in tokens:
+                if token in stoplist:
+                    add = False
+                    break
+            if add:
+                award_noms.append(n[0])
+            if len(award_noms) is 5:
+                break
+        if len(award_noms) is 0:
+            nominees[award] = [""]
+        else:
+            nominees[award]=award_noms
 
         award_preses = []
-        while len(award_preses)<2:
-            curr_preses = preses[award].most_common(counter)
-            for p in curr_preses:
-                add = True
-                for w in stoplist:
-                    if w in p:
-                        add = False
-                        break
-                if add:
-                    award_preses.append(n)
-                counter+=10
+        curr_preses = preses[award].most_common()
+        for p in curr_preses:
+            add = True
+            tokens = wordpunct_tokenize(p[0])
+            for token in tokens:
+                if token in stoplist:
+                    add = False
+                    break
+            if add:
+                award_preses.append(p[0])
+            if len(award_preses) is 2:
+                break
 
-        
-        if preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75:
+        if len(award_preses) is 0:
+            presenters[award] = [""]
+        elif len(award_preses) is 1 or preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75:
             presenters[award] = [award_preses[0]]
         else:
             presenters[award] = award_preses[0:2]
@@ -225,7 +234,8 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     #Your code here
-    if len(list(all_nominees))<0:
+    global all_nominees
+    if len(list(all_nominees)) == 0:
         get_all(year)
 
     nominees = {}
@@ -239,7 +249,8 @@ def get_winners(year):
     '''Winners is a dictionary with the hard coded award
     names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
-    if len(list(all_nominees))<0:
+    global all_nominees
+    if len(list(all_nominees)) == 0:
         get_all(year)
 
     nominees = {}
@@ -255,7 +266,8 @@ def get_presenters(year):
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
-    if len(list(all_presenters))<0:
+    global all_presenters
+    if len(list(all_presenters)) == 0:
         get_all(year)
     
     return all_presenters
@@ -323,9 +335,10 @@ def main():
     
     pre_ceremony()
 
-    print "Ok, I'm ready." 
+
+    print "Ok, I'm ready."
     year = get_year()
-    
+
     while True:
         print "We will be looking at " + year + ". \n What would you like to do?"
         print "1: Get award names"
@@ -340,17 +353,16 @@ def main():
 
         func = raw_input("Enter choice number: ")
         while func not in choices:
-            func = raw_input("Please enter a number 1-7: ")  
+            func = raw_input("Please enter a number 1-7: ")
 
         result = 0
         if func == "1":
-            result = award_names(int(year))
-            continue
+            result = get_awards(int(year))
         elif func == "2":
             result = get_nominees(int(year))
-            continue
         elif func == "3":
-            result = get_winners(int(year))
+            print_winners(get_winners(int(year)))
+            continue
         elif func == "4":
             result = get_hosts(int(year))
         elif func == "5":
@@ -373,12 +385,18 @@ def main():
     return
 
 def print_dict(d):
-    for (k,v) in d:
-        print k + ": \n" + print_list(v)
+    for key in d.keys():
+
+        print key + ": \n" + ', '.join(d[key])+'\n'
 
 def print_list(l):
     for x in l:
-        print "\t"+x+"\n"
+        print "\t"+str(x)
+    return ""
+
+def print_winners(winnersDict):
+    for key in winnersDict.keys():
+        print key + ": " + winnersDict[key]
 
 def get_year():
     year = raw_input("What year would you like me to look into? \n")
