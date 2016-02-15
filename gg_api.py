@@ -156,7 +156,7 @@ def get_all(year):
     pres_patterns.append(re.compile(r'envelope',re.IGNORECASE))
     pres_patterns.append(re.compile(r'announc',re.IGNORECASE))
 
-    stoplist = ['globes','golden','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
+    stoplist = ['globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
     nltk_stopwords = stopwords.words('english')
 
     noms = {}
