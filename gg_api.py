@@ -38,7 +38,6 @@ def sortTweets(year):
     # remove stoplisted words from the sets we will compare to the tweets, and then make a set out of these tokenized versions
     awardSets = [set(w for w in lst if w not in stopwords.words('english') and w is not "-") for lst in jsonTokenizer(OFFICIAL_AWARDS)]
 
-
     for j in range(len(strings)):
         tweet = strings[j]
         if re.search(isAwardPattern, tweet):
@@ -59,8 +58,6 @@ def sortTweets(year):
                 tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]].append(j)
     return
 
-
-
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
@@ -76,7 +73,13 @@ def get_hosts(year):
             for match in matches:
                 host_mentions[match] += 1
 
-    hosts = host_mentions.most_common(10)
+    hosts = host_mentions.most_common(2)
+
+    if hosts[1][1] < hosts[0][1]*3/4:
+        hosts = [hosts[0][0]]
+    else:
+        hosts = [host[0] for host in hosts]
+
     return hosts
 
 def get_awards(year):
@@ -98,10 +101,10 @@ def get_awards(year):
 
     awards_tuples = award_mentions.most_common()
 
-    comma = re.compile(r',|\"|\'')
+    reject = re.compile(r',|\"|\'|\(')
     awards_tuples_filter = []
     for a in awards_tuples:
-        if not re.search(comma, a[0]):
+        if not re.search(reject, a[0]):
             awards_tuples_filter.append(a)
 
     awards_tuples = awards_tuples_filter
@@ -124,7 +127,8 @@ def get_awards(year):
 
     awards.sort(reverse=True, key=lambda x: x[1])
 
-    awards = awards
+    awards = [award[0] for award in awards]
+    awards = awards[:26]
 
     return awards
 
@@ -153,6 +157,7 @@ def get_all(year):
     pres_patterns.append(re.compile(r'announc',re.IGNORECASE))
 
     stoplist = ['globes','golden','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
+    nltk_stopwords = stopwords.words('english')
 
     noms = {}
     preses = {}
@@ -178,7 +183,6 @@ def get_all(year):
                     matches = re.findall(namePattern, tweet)
                     matches = (w.lower() for w in matches)
                     for match in matches:
-
                         preses[award][match]+=1
 
 
@@ -191,7 +195,7 @@ def get_all(year):
             add = True
             tokens = wordpunct_tokenize(n[0])
             for token in tokens:
-                if token in stoplist:
+                if token in stoplist or token in nltk_stopwords:
                     add = False
                     break
             if add:
@@ -209,7 +213,7 @@ def get_all(year):
             add = True
             tokens = wordpunct_tokenize(p[0])
             for token in tokens:
-                if token in stoplist:
+                if token in stoplist or token in nltk_stopwords:
                     add = False
                     break
             if add:
@@ -272,7 +276,25 @@ def get_presenters(year):
     
     return all_presenters
 
+def best_dressed(year):
+    strings = yearMap[year]['strings']
+    dressPattern = re.compile(r'dress', re.IGNORECASE)
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
+    stoplist = ['globes','golden','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
 
+    dress_mentions = Counter()
+    for tweet in strings:
+        if re.search(dressPattern, tweet):
+            matches = re.findall(namePattern, tweet)
+            matches = (w.lower() for w in matches)
+            for match in matches:
+                match_words = wordpunct_tokenize(match)
+                if match_words[0] not in stoplist and match_words[1] not in stoplist:
+                    dress_mentions[match] += 1
+
+    best_dress = dress_mentions.most_common(1)
+
+    return best_dress
 
 def jsonStrings (fileid):
     # using json libraries
@@ -347,13 +369,14 @@ def main():
         print "4: Get host(s)"
         print "5: Get presenters"
         print "6: Change year"
-        print "7: Exit"
+        print "7: Get best dressed"
+        print "8: Exit"
 
-        choices = ["1","2","3","4","5","6", "7"]
+        choices = ["1","2","3","4","5","6", "7","8"]
 
         func = raw_input("Enter choice number: ")
         while func not in choices:
-            func = raw_input("Please enter a number 1-7: ")
+            func = raw_input("Please enter a number 1-8: ")
 
         result = 0
         if func == "1":
@@ -372,6 +395,8 @@ def main():
         elif func == "6":
             result = get_year()
         elif func == "7":
+            result = best_dressed(int(year))
+        elif func == "8":
             break
 
         if result != 0:
