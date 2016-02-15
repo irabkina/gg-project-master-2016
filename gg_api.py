@@ -331,13 +331,12 @@ def pre_ceremony():
     # global reader
     # reader = nltk.corpus.reader.twitter.TwitterCorpusReader(root=path, fileids = ['gg2013.json', 'gg2015.json'])
     global yearMap
-    print "finished creating reader"
-    yearMap[2013] = {}
-    yearMap[2015] = {}
-    yearMap[2013]['strings'] = 'testing'
-    print yearMap[2013]['strings']
-    yearMap[2013]['strings'] = jsonStrings('tweets/gg2013.json')
-    print "finished creating 2013 strings"
+    #yearMap[2013] = {}
+    #yearMap[2015] = {}
+    #yearMap[2013]['strings'] = 'testing'
+    #print yearMap[2013]['strings']
+    #yearMap[2013]['strings'] = jsonStrings('tweets/gg2013.json')
+    #print "finished creating 2013 strings"
     #yearMap[2015]['strings'] = jsonStrings('tweets/gg2015.json')
     #print "finished creating 2015 strings"
     #yearMap[2013]['tokens'] = jsonTokenizer(yearMap[2013]['strings'])
@@ -356,7 +355,6 @@ def main():
     print "Welcome to the Golden Globes API. Please wait."
     
     pre_ceremony()
-
 
     print "Ok, I'm ready."
     year = get_year()
@@ -424,11 +422,15 @@ def print_winners(winnersDict):
         print key + ": " + winnersDict[key]
 
 def get_year():
-    year = raw_input("What year would you like me to look into? \n")
+    global yearMap
+    year = raw_input("What year would you like me to look into?\n(Please make sure it's in a subfolder called tweets, and named ggYYYY.json)\n")
     
-    while year != "2013" and year != "2015":
-         year = raw_input("Sorry, that year isn't valid. Please enter 2013 or 2015. What year would you like me to look into? \n")
+    #while year != "2013" and year != "2015":
+    #     year = raw_input("Sorry, that year isn't valid. Please enter 2013 or 2015. What year would you like me to look into? \n")
     
+    yearMap[int(year)] = {}
+    yearMap[int(year)]['strings'] = jsonStrings('tweets/gg'+year+'.json')
+
     return year
 
 if __name__ == '__main__':
