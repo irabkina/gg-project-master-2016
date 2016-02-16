@@ -14,6 +14,7 @@ reader = None
 docs = None
 # all the nominees
 all_nominees = {}
+all_winners = {}
 all_presenters = {}
 
 
@@ -32,6 +33,8 @@ tweetsSortedByAward = {}
 def sortTweets(year):
     global tweetsSortedByAward
     tweetsSortedByAward = {}
+    for award in OFFICIAL_AWARDS:
+        tweetsSortedByAward[award] = []
 
     strings = yearMap[year]['strings']
     isAwardPattern = re.compile(r'best|award', re.IGNORECASE)
@@ -43,19 +46,18 @@ def sortTweets(year):
         if re.search(isAwardPattern, tweet):
             tweetTokenized = [w.lower() for w in wordpunct_tokenize(tweet)]
             max = 1
-            bestIndex = -1
+            bestIndex = []
             tweetSet = set(tweetTokenized)
             for i in range(len(awardSets)):
                 currLen = len(tweetSet & awardSets[i])
                 if currLen > max:
                     max = currLen
-                    bestIndex = i
-            if bestIndex != -1:
-                try:
-                    tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]]
-                except KeyError:
-                    tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]] = []
-                tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]].append(j)
+                    bestIndex = [i]
+                # elif currLen == max:
+                #     bestIndex.append(i)
+            if bestIndex:
+                for index in bestIndex:
+                    tweetsSortedByAward[OFFICIAL_AWARDS[index]].append(j)
     return
 
 def get_hosts(year):
@@ -135,6 +137,7 @@ def get_awards(year):
 def get_all(year):
     global all_nominees
     global all_presenters
+    global all_winners
     if len(list(all_nominees))>0:
         return
 
@@ -143,7 +146,7 @@ def get_all(year):
     strings = yearMap[year]['strings']
     nom_patterns = []
     pres_patterns = []
-    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*')
+    namePattern = re.compile(r'[A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?') #add to no list? :;!?()
 
     # patterns for finding nominees
     nom_patterns.append(re.compile(r'nom', re.IGNORECASE))
@@ -156,7 +159,7 @@ def get_all(year):
     pres_patterns.append(re.compile(r'envelope',re.IGNORECASE))
     pres_patterns.append(re.compile(r'announc',re.IGNORECASE))
 
-    stoplist = ['globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
+    stoplist = ['rt', 'globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
     nltk_stopwords = stopwords.words('english')
 
     noms = {}
@@ -170,27 +173,36 @@ def get_all(year):
         for index in tweets:
             # get nominees
             tweet = strings[index]
-            for pat in nom_patterns:
-                if re.search(pat, tweet):
-                    matches = re.findall(namePattern, tweet)
-                    matches = (w.lower() for w in matches)
-                    for match in matches:
-                        noms[award][match]+=1
+            # for pat in nom_patterns:
+            #     if re.search(pat, tweet):
+            match = re.search(namePattern, tweet)
+            if match:
+                match = match.group(0).lower()
+                noms[award][match] += 1
+                # matches = re.findall(namePattern, tweet)
+                # matches = (w.lower() for w in matches)
+                # for match in matches:
+                #     noms[award][match]+=1
 
-            #get presenters
-            for pat in pres_patterns:
-                if re.search(pat, tweet):
-                    matches = re.findall(namePattern, tweet)
-                    matches = (w.lower() for w in matches)
-                    for match in matches:
-                        preses[award][match]+=1
+                #get presenters
+                for pat in pres_patterns:
+                    if re.search(pat, tweet):
+                        matches = re.findall(namePattern, tweet)
+                        matches = (w.lower() for w in matches)
+                        for match in matches:
+                            preses[award][match]+=1
 
 
+    # stoplists and finds the 5 most frequently mentioned "nominees" and up to 2 most mentioned "presenters"
     nominees = {}
     presenters = {}
+    winners = {}
     for award in noms.keys():
         award_noms = []
         curr_noms = noms[award].most_common()
+        if award == "best performance by an actress in a television series - comedy or musical":
+            for name in curr_noms:
+                print name[0]
         for n in curr_noms:
             add = True
             tokens = wordpunct_tokenize(n[0])
@@ -199,13 +211,20 @@ def get_all(year):
                     add = False
                     break
             if add:
-                award_noms.append(n[0])
-            if len(award_noms) is 5:
-                break
+                award_noms.append(n)
+
+        # winner is the most common n-gram, biased against unigrams by one half (a unigram must have double the frequency
+        # of a bigram to be picked.).  Nominees are the 4 most common bigram+, but not the winner.
+        award_winner = pick_top(1, award_noms, .5)
+        award_noms = pick_top(5, award_noms, 0)
+        award_noms = [nominee for nominee in award_noms if award_winner[0] is not nominee]
+        if len(award_noms) is 5:
+            award_noms = award_noms[:4]
         if len(award_noms) is 0:
             nominees[award] = [""]
         else:
             nominees[award]=award_noms
+        winners[award] = award_winner[0]
 
         award_preses = []
         curr_preses = preses[award].most_common()
@@ -230,7 +249,43 @@ def get_all(year):
     
     all_nominees = nominees
     all_presenters = presenters
+    all_winners = winners
     return
+
+# Takes the top *number* unigrams or n-grams, depending on ratio
+def pick_top(number, sortedLst, ratio):
+    unigrams = []
+    bigramsplus = []
+    for element in sortedLst:
+        tokens = wordpunct_tokenize(element[0])
+        if len(tokens) is 1:
+            unigrams.append(element)
+        else:
+            bigramsplus.append(element)
+
+    #will be a list of the top *number* strings
+    topList = []
+    unigramIndex = 0
+    bigramIndex = 0
+    while len(topList) < number:
+        if unigramIndex is len(unigrams):
+            if bigramIndex is len(bigramsplus):
+                break
+            else:
+                topList.append(bigramsplus[bigramIndex][0])
+                bigramIndex += 1
+        elif bigramIndex is len(bigramsplus):
+            topList.append(unigrams[unigramIndex][0])
+            unigramIndex += 1
+        else:
+            if unigrams[unigramIndex][1] * ratio < bigramsplus[bigramIndex][1]:
+                topList.append(bigramsplus[bigramIndex][0])
+                bigramIndex += 1
+            else:
+                topList.append(unigrams[unigramIndex][0])
+                unigramIndex += 1
+
+    return topList
 
 
 def get_nominees(year):
@@ -253,15 +308,15 @@ def get_winners(year):
     '''Winners is a dictionary with the hard coded award
     names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
-    global all_nominees
-    if len(list(all_nominees)) == 0:
+    global all_winners
+    if len(list(all_winners)) == 0:
         get_all(year)
 
-    nominees = {}
-    for award in all_nominees.keys():
-        nominees[award] = all_nominees[award][0]
+    winners = {}
+    for award in all_winners.keys():
+        winners[award] = all_winners[award]
 
-    return nominees
+    return winners
     
 
 
@@ -315,7 +370,7 @@ def jsonTokenizer(tweets):
 
 def tokenizeNoPunctuation(tweets):
     tokens = []
-    stoplist = [',', '(', ')', '.', '?', '/', '-', '+', ':', ';']
+    stoplist = [',', '(', ')', '.', '?', '/', '+', ':', ';']
     for tweet in tweets:
         tokenized = wordpunct_tokenize(tweet)
         tokens.append([token for token in tokenized if token not in stoplist])
