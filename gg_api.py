@@ -2,6 +2,7 @@ import nltk
 from nltk.corpus import stopwords
 import re
 import json
+import os.path
 
 from nltk.tokenize import wordpunct_tokenize
 from collections import Counter
@@ -63,6 +64,9 @@ def sortTweets(year):
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
     of this function or what it returns.'''
+    if year not in yearMap.keys():
+        prep_year(year)
+
     strings = yearMap[year]['strings']
     hostPattern = re.compile(r'hosts?', re.IGNORECASE)
     namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
@@ -87,6 +91,8 @@ def get_hosts(year):
 def get_awards(year):
     '''Awards is a list of strings. Do NOT change the name
     of this function or what it returns.'''
+    if year not in yearMap.keys():
+        prep_year(year)
     # Your code here
     awards = []
     strings = yearMap[year]['strings']
@@ -140,6 +146,9 @@ def get_all(year):
     global all_winners
     if len(list(all_nominees))>0:
         return
+
+    if year not in yearMap.keys():
+        prep_year(year)
 
     sortTweets(year)
 
@@ -200,9 +209,9 @@ def get_all(year):
     for award in noms.keys():
         award_noms = []
         curr_noms = noms[award].most_common()
-        if award == "best performance by an actress in a television series - comedy or musical":
-            for name in curr_noms:
-                print name[0]
+        #if award == "best performance by an actress in a television series - comedy or musical":
+            #for name in curr_noms:
+               # print name[0]
         for n in curr_noms:
             add = True
             tokens = wordpunct_tokenize(n[0])
@@ -332,6 +341,9 @@ def get_presenters(year):
     return all_presenters
 
 def best_dressed(year):
+    if year not in yearMap.keys():
+        prep_year(year)
+
     strings = yearMap[year]['strings']
     dressPattern = re.compile(r'dress', re.IGNORECASE)
     namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
@@ -385,7 +397,7 @@ def pre_ceremony():
     # Your code here
     # global reader
     # reader = nltk.corpus.reader.twitter.TwitterCorpusReader(root=path, fileids = ['gg2013.json', 'gg2015.json'])
-    global yearMap
+    #global yearMap
     #yearMap[2013] = {}
     #yearMap[2015] = {}
     #yearMap[2013]['strings'] = 'testing'
@@ -407,11 +419,11 @@ def main():
     run when grading. Do NOT change the name of this function or
     what it returns.'''
     # Your code here
-    print "Welcome to the Golden Globes API. Please wait."
+    print "Welcome to the Golden Globes API"
     
-    pre_ceremony()
+    #pre_ceremony()
 
-    print "Ok, I'm ready."
+    #print "Ok, I'm ready."
     year = get_year()
 
     while True:
@@ -433,18 +445,23 @@ def main():
 
         result = 0
         if func == "1":
-            result = get_awards(int(year))
+            print "\nGetting award names"
+            result = get_awards(year)
         elif func == "2":
-            result = get_nominees(int(year))
+            print "\nGetting nominees"
+            result = get_nominees(year)
         elif func == "3":
-            print_winners(get_winners(int(year)))
-            continue
+            print "\nGetting winners"
+            print_winners(get_winners(year))
         elif func == "4":
-            result = get_hosts(int(year))
+            print "\nGetting hosts"
+            result = get_hosts(year)
         elif func == "5":
-            result = get_presenters(int(year))
+            print "\nGetting presenters"
+            result = get_presenters(year)
         elif func == "6":
-            year = best_dressed(int(year))
+            print "\nGetting best dressed"
+            year = best_dressed(year)
         elif func == "7":
             result = get_year()
         elif func == "8":
@@ -475,16 +492,25 @@ def print_winners(winnersDict):
         print key + ": " + winnersDict[key]
 
 def get_year():
-    global yearMap
-    year = raw_input("What year would you like me to look into?\n(Please make sure it's in a subfolder called tweets, and named ggYYYY.json)\n")
-    
+    while True:
+        year = raw_input("What year would you like me to look into?\n")
+        if os.path.exists("./tweets/gg%s.json" %year):
+            prep_year(year)
+            return year
+        else:
+            print "Please make sure tweets/gg%s.json exists" %year
     #while year != "2013" and year != "2015":
     #     year = raw_input("Sorry, that year isn't valid. Please enter 2013 or 2015. What year would you like me to look into? \n")
     
-    yearMap[int(year)] = {}
-    yearMap[int(year)]['strings'] = jsonStrings('tweets/gg'+year+'.json')
+    
 
     return year
+
+def prep_year(year):
+    global yearMap
+    yearMap[year] = {}
+    yearMap[year]['strings'] = jsonStrings('tweets/gg'+year+'.json')
+    
 
 if __name__ == '__main__':
     main()
