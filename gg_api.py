@@ -421,8 +421,8 @@ def main():
         print "3: Get winners"
         print "4: Get host(s)"
         print "5: Get presenters"
-        print "6: Change year"
-        print "7: Get best dressed"
+        print "6: Get best dressed"
+        print "7: Change year"
         print "8: Exit"
 
         choices = ["1","2","3","4","5","6", "7","8"]
@@ -444,11 +444,9 @@ def main():
         elif func == "5":
             result = get_presenters(int(year))
         elif func == "6":
-            year = get_year()
-        elif func == "6":
-            result = get_year()
+            year = best_dressed(int(year))
         elif func == "7":
-            result = best_dressed(int(year))
+            result = get_year()
         elif func == "8":
             break
 
