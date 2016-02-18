@@ -44,7 +44,7 @@ def text(result, answer):
     return textscore
 
 
-def spell_check(r, a, s, weight=1):
+def spell_check(r, a, s, scores, weight=1):
     change = weight*(1-(edit_distance(r, a)/float(max(len(r), len(a)))))
     if s in scores:
         # penalty for returning multiple of the same result when
@@ -77,13 +77,25 @@ def calc_translation(result, answer):
             score_by_results[r][a] = text(norm_text([a]), norm_text([r]))
             score_by_answers[a][r] = score_by_results[r][a]
 
+    #print score_by_results
     for r in score_by_results:
         cnt = 0
         ranking = score_by_results[r].most_common()
         flag = True
         while flag:
             # The answer that best matches the result
+            #try:
             answer_match = ranking[cnt][0]
+            # except IndexError as e: 
+            #     print "ranking: "
+            #     print ranking
+            #     print "score by result: "
+            #     print score_by_results[r]
+            #     print "r: "
+            #     print r
+            #     print "answer was: "
+            #     print answer
+
             # The top result matching that answer
             max_result = score_by_answers[answer_match].most_common(1)[0]
 
@@ -109,7 +121,7 @@ def calc_translation(result, answer):
                 # if the top result matching that answer is our current result or
                 # if the current result's score is greater than the previous top result
                 translation[r] = answer_match
-                scores[answer_match] = spell_check(r, answer_match, answer_match)
+                scores[answer_match] = spell_check(r, answer_match, answer_match, scores)
 
                 flag = False
 
@@ -121,6 +133,7 @@ def calc_translation(result, answer):
 
 
 def calc_score(result, answer):
+    result = set(result)
     intersection = result.intersection(answer)
     len_intersection = len(intersection)
     len_union = len(result.union(answer))
@@ -156,6 +169,12 @@ def score_structured(year, answers, info_type):
     results = getattr(gg_api, 'get_%s' % info_type)(year)
 
     for a in answers['award_data']:
+        # print "answers['award_data'][a]: " 
+        # print answers['award_data'][a]
+        # print "a: "
+        # print a
+        # print "info type: "
+        # print info_type
         temp_spelling, translation = calc_translation(results[a], answers['award_data'][a][info_type])
         spelling_score += temp_spelling
         c_score += calc_score([translation[res] if res in translation else res for res in results[a]], answers['award_data'][a][info_type])
@@ -172,7 +191,8 @@ def score_unstructured(year, answers, info_type):
 
 
 def main(years, grading):
-    scores = {y: {g: 0 for g in grading} for y in years}
+    types = ['spelling', 'completeness']
+    scores = {y: {g: {t: 0 for t in types} for g in grading} for y in years}
     for y in years:
         with open('gg%sanswers.json' % y, 'r') as f:
             answers = json.load(f)
@@ -181,6 +201,7 @@ def main(years, grading):
 
         for special in ['hosts', 'awards']:
             if special in grading:
+                #print scores
                 scores[y][special]['spelling'], scores[y][special]['completeness'] = score_unstructured(y, answers, special)
                 grading = grading[1:]
 
