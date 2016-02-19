@@ -8,7 +8,7 @@ from nltk.tokenize import wordpunct_tokenize
 from collections import Counter
 
 OFFICIAL_AWARDS = ['cecil b. demille award', 'best motion picture - drama', 'best performance by an actress in a motion picture - drama', 'best performance by an actor in a motion picture - drama', 'best motion picture - comedy or musical', 'best performance by an actress in a motion picture - comedy or musical', 'best performance by an actor in a motion picture - comedy or musical', 'best animated feature film', 'best foreign language film', 'best performance by an actress in a supporting role in a motion picture', 'best performance by an actor in a supporting role in a motion picture', 'best director - motion picture', 'best screenplay - motion picture', 'best original score - motion picture', 'best original song - motion picture', 'best television series - drama', 'best performance by an actress in a television series - drama', 'best performance by an actor in a television series - drama', 'best television series - comedy or musical', 'best performance by an actress in a television series - comedy or musical', 'best performance by an actor in a television series - comedy or musical', 'best mini-series or motion picture made for television', 'best performance by an actress in a mini-series or motion picture made for television', 'best performance by an actor in a mini-series or motion picture made for television', 'best performance by an actress in a supporting role in a series, mini-series or motion picture made for television', 'best performance by an actor in a supporting role in a series, mini-series or motion picture made for television']
-path = 'tweets'
+path = ''
 
 yearMap = {}
 reader = None
@@ -480,20 +480,18 @@ def print_winners(winnersDict):
 def get_year():
     while True:
         year = raw_input("What year would you like me to look into?\n")
-        if os.path.exists("./tweets/gg%s.json" %year):
+        if os.path.exists("./gg%s.json" %year):
             prep_year(year)
             return year
         else:
-            print "Please make sure tweets/gg%s.json exists" %year
-    
-    
+            print "Please make sure gg%s.json exists and is inside this folder" %year
 
     return year
 
 def prep_year(year):
     global yearMap
     yearMap[year] = {}
-    yearMap[year]['strings'] = jsonStrings('tweets/gg'+year+'.json')
+    yearMap[year]['strings'] = jsonStrings('gg'+year+'.json')
     
 
 if __name__ == '__main__':
