@@ -170,7 +170,7 @@ def get_all(year):
     pres_patterns.append(re.compile(r'envelope',re.IGNORECASE))
     pres_patterns.append(re.compile(r'announc',re.IGNORECASE))
 
-    stoplist = ['rt', 'globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
+    stoplist = ['rt', 'yay', 'yes', 'congrats', 'globe','globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award', 'awards','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
     nltk_stopwords = stopwords.words('english')
 
     potentialWinners = {}
@@ -263,7 +263,7 @@ def get_all(year):
 
         if len(award_preses) is 0:
             presenters[award] = [""]
-        elif len(award_preses) is 1:  # threshhold if we want it (or preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75)
+        elif len(award_preses) is 1 or preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75:
             presenters[award] = [award_preses[0]]
         else:
             presenters[award] = award_preses[0:2]
@@ -373,7 +373,7 @@ def best_dressed(year):
 
     best_dress = dress_mentions.most_common(1)
 
-    return best_dress
+    return best_dress[0][0]
 
 def jsonStrings (fileid):
     # using json libraries
@@ -459,9 +459,9 @@ def main():
             result = get_presenters(year)
         elif func == "6":
             print "\nGetting best dressed"
-            year = best_dressed(year)
+            print best_dressed(year)
         elif func == "7":
-            result = get_year()
+            year = get_year()
         elif func == "8":
             break
 
@@ -482,7 +482,8 @@ def print_dict(d):
 
 def print_list(l):
     for x in l:
-        print "\t"+str(x)
+        thisString = ''.join((c for c in x if ord(c) < 128))
+        print "\t"+ thisString
     return ""
 
 def print_winners(winnersDict):
