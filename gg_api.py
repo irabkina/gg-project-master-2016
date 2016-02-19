@@ -161,7 +161,7 @@ def get_all(year):
     nom_patterns.append(re.compile(r'nom', re.IGNORECASE))
     nom_patterns.append(re.compile(r'should.*w[io]n', re.IGNORECASE))
     nom_patterns.append(re.compile(r'will win', re.IGNORECASE))
-        .append(re.compile(r'gonna win', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'gonna win', re.IGNORECASE))
 
     # patterns for finding presenters
     pres_patterns.append(re.compile(r'present',re.IGNORECASE))
@@ -313,7 +313,7 @@ def get_nominees(year):
     return nominees
     
 
-def get_winners(year):
+def get_winner(year):
     '''Winners is a dictionary with the hard coded award
     names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
