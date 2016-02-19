@@ -156,12 +156,14 @@ def get_all(year):
     nom_patterns = []
     pres_patterns = []
     namePattern = re.compile(r'[A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?') #add to no list? :;!?()
+    personPattern = re.compile(r'[A-Z]\w* [A-Z]\w*')
 
     # patterns for finding nominees
     nom_patterns.append(re.compile(r'nom', re.IGNORECASE))
-    nom_patterns.append(re.compile(r'should.*w[io]n', re.IGNORECASE))
-    nom_patterns.append(re.compile(r'will win', re.IGNORECASE))
-    nom_patterns.append(re.compile(r'gonna win', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'should.*(w[io]n|get)', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'will (win|get)', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'gonna (win|get)', re.IGNORECASE))
+    nom_patterns.append(re.compile(r'deserve', re.IGNORECASE))
 
     # patterns for finding presenters
     pres_patterns.append(re.compile(r'present',re.IGNORECASE))
@@ -171,48 +173,46 @@ def get_all(year):
     stoplist = ['rt', 'globes','golden','goldenglobes','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
     nltk_stopwords = stopwords.words('english')
 
-    noms = {}
+    potentialWinners = {}
+    potentialNominees = {}
     preses = {}
 
     for award in tweetsSortedByAward.keys():
-        noms[award] = Counter()
+        potentialWinners[award] = Counter()
+        potentialNominees[award] = Counter()
         preses[award] = Counter()
         tweets = tweetsSortedByAward[award]
 
         for index in tweets:
-            # get nominees
+            # get winner candidates and nominees
             tweet = strings[index]
-            # for pat in nom_patterns:
-            #     if re.search(pat, tweet):
             match = re.search(namePattern, tweet)
             if match:
                 match = match.group(0).lower()
-                noms[award][match] += 1
-                # matches = re.findall(namePattern, tweet)
-                # matches = (w.lower() for w in matches)
-                # for match in matches:
-                #     noms[award][match]+=1
-
-                #get presenters
-                for pat in pres_patterns:
+                potentialWinners[award][match] += 1
+                for pat in nom_patterns:
                     if re.search(pat, tweet):
-                        matches = re.findall(namePattern, tweet)
-                        matches = (w.lower() for w in matches)
-                        for match in matches:
-                            preses[award][match]+=1
+                        potentialNominees[award][match] += 1
+            #get presenters
+            for pat in pres_patterns:
+                if re.search(pat, tweet):
+                    matches = re.findall(personPattern, tweet)
+                    matches = (w.lower() for w in matches)
+                    for match in matches:
+                        preses[award][match]+=1
 
 
     # stoplists and finds the 5 most frequently mentioned "nominees" and up to 2 most mentioned "presenters"
     nominees = {}
     presenters = {}
     winners = {}
-    for award in noms.keys():
-        award_noms = []
-        curr_noms = noms[award].most_common()
+    for award in OFFICIAL_AWARDS:
+        winnerList = []
+        sortedWinners = potentialWinners[award].most_common()
         #if award == "best performance by an actress in a television series - comedy or musical":
             #for name in curr_noms:
                # print name[0]
-        for n in curr_noms:
+        for n in sortedWinners:
             add = True
             tokens = wordpunct_tokenize(n[0])
             for token in tokens:
@@ -220,20 +220,33 @@ def get_all(year):
                     add = False
                     break
             if add:
-                award_noms.append(n)
+                winnerList.append(n)
+
+        nomineeList = []
+        sortedNominees = potentialNominees[award].most_common()
+        for n in sortedNominees:
+            add = True
+            tokens = wordpunct_tokenize(n[0])
+            for token in tokens:
+                if token in stoplist or token in nltk_stopwords:
+                    add = False
+                    break
+            if add:
+                nomineeList.append(n)
 
         # winner is the most common n-gram, biased against unigrams by one half (a unigram must have double the frequency
         # of a bigram to be picked.).  Nominees are the 4 most common bigram+, but not the winner.
-        award_winner = pick_top(1, award_noms, .5)
-        award_noms = pick_top(5, award_noms, 0)
-        award_noms = [nominee for nominee in award_noms if award_winner[0] is not nominee]
-        if len(award_noms) is 5:
-            award_noms = award_noms[:4]
-        if len(award_noms) is 0:
+        award_winner = pick_top(1, winnerList, .5)
+        winners[award] = award_winner[0]
+
+        nomineeList = pick_top(5, nomineeList, 0)
+        nomineeList = [nominee for nominee in nomineeList if award_winner[0] != nominee]
+        if len(nomineeList) is 5:
+            nomineeList = nomineeList[:4]
+        if len(nomineeList) is 0:
             nominees[award] = [""]
         else:
-            nominees[award]=award_noms
-        winners[award] = award_winner[0]
+            nominees[award]=nomineeList
 
         award_preses = []
         curr_preses = preses[award].most_common()
@@ -244,14 +257,13 @@ def get_all(year):
                 if token in stoplist or token in nltk_stopwords:
                     add = False
                     break
-            if add:
+            if add and p[0] != winners[award]:
                 award_preses.append(p[0])
-            if len(award_preses) is 2:
-                break
+
 
         if len(award_preses) is 0:
             presenters[award] = [""]
-        elif len(award_preses) is 1 or preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75:
+        elif len(award_preses) is 1:  # threshhold if we want it (or preses[award][award_preses[1]] < preses[award][award_preses[0]]*0.75)
             presenters[award] = [award_preses[0]]
         else:
             presenters[award] = award_preses[0:2]
@@ -308,7 +320,7 @@ def get_nominees(year):
 
     nominees = {}
     for award in all_nominees.keys():
-        nominees[award] = all_nominees[award][1:5]
+        nominees[award] = all_nominees[award]
 
     return nominees
     
@@ -438,7 +450,7 @@ def main():
             result = get_nominees(year)
         elif func == "3":
             print "\nGetting winners"
-            print_winners(get_winners(year))
+            print_winners(get_winner(year))
         elif func == "4":
             print "\nGetting hosts"
             result = get_hosts(year)
