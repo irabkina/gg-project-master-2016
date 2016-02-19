@@ -1,4 +1,4 @@
-'''Version 0.20'''
+'''Version 0.31'''
 import sys
 import json
 import difflib
@@ -77,25 +77,13 @@ def calc_translation(result, answer):
             score_by_results[r][a] = text(norm_text([a]), norm_text([r]))
             score_by_answers[a][r] = score_by_results[r][a]
 
-    #print score_by_results
     for r in score_by_results:
         cnt = 0
         ranking = score_by_results[r].most_common()
         flag = True
         while flag:
             # The answer that best matches the result
-            #try:
             answer_match = ranking[cnt][0]
-            # except IndexError as e: 
-            #     print "ranking: "
-            #     print ranking
-            #     print "score by result: "
-            #     print score_by_results[r]
-            #     print "r: "
-            #     print r
-            #     print "answer was: "
-            #     print answer
-
             # The top result matching that answer
             max_result = score_by_answers[answer_match].most_common(1)[0]
 
@@ -121,7 +109,7 @@ def calc_translation(result, answer):
                 # if the top result matching that answer is our current result or
                 # if the current result's score is greater than the previous top result
                 translation[r] = answer_match
-                scores[answer_match] = spell_check(r, answer_match, answer_match, scores)
+                scores[answer_match] = spell_check(r, answer_match, answer_match)
 
                 flag = False
 
@@ -168,13 +156,11 @@ def score_structured(year, answers, info_type):
     c_score = 0
     results = getattr(gg_api, 'get_%s' % info_type)(year)
 
+    if info_type == "nominees":
+        del answers['award_data']['cecil b. demille award']
+        del results['cecil b. demille award']
+
     for a in answers['award_data']:
-        # print "answers['award_data'][a]: " 
-        # print answers['award_data'][a]
-        # print "a: "
-        # print a
-        # print "info type: "
-        # print info_type
         temp_spelling, translation = calc_translation(results[a], answers['award_data'][a][info_type])
         spelling_score += temp_spelling
         c_score += calc_score([translation[res] if res in translation else res for res in results[a]], answers['award_data'][a][info_type])
@@ -192,7 +178,7 @@ def score_unstructured(year, answers, info_type):
 
 def main(years, grading):
     types = ['spelling', 'completeness']
-    scores = {y: {g: {t: 0 for t in types} for g in grading} for y in years}
+    scores = {y: {g: {t:0 for t in types} for g in grading} for y in years}
     for y in years:
         with open('gg%sanswers.json' % y, 'r') as f:
             answers = json.load(f)
@@ -201,7 +187,6 @@ def main(years, grading):
 
         for special in ['hosts', 'awards']:
             if special in grading:
-                #print scores
                 scores[y][special]['spelling'], scores[y][special]['completeness'] = score_unstructured(y, answers, special)
                 grading = grading[1:]
 
@@ -212,7 +197,7 @@ def main(years, grading):
 
 if __name__ == '__main__':
     years = ['2013', '2015']
-    grading = ["hosts", "awards", "nominees", "presenters", "winners"]
+    grading = ["hosts", "awards", "nominees", "presenters", "winner"]
 
     if len(sys.argv) > 1:
         if '2013' in sys.argv:
