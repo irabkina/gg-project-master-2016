@@ -13,10 +13,6 @@ path = ''
 yearMap = {}
 reader = None
 docs = None
-# all the nominees
-#all_nominees = {}
-#all_winners = {}
-#all_presenters = {}
 
 synonyms = {'tv':'television','movie':'film','motion':'film','picture':None,'show':'television','dramatic':'drama','funny':'comedy','animation':'animated','tune':'song','script':'screenplay','writing':'screenplay','music':'score','miniseries':'mini'}
 
@@ -68,12 +64,6 @@ def sortTweets(year):
             if bestIndex > -1:
                 tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]].append(j)
 
-    # for i in range(3):
-    #     award = OFFICIAL_AWARDS[i]
-    #     print award
-    #     for j in range(4):
-    #         tweet = tweetsSortedByAward[award][j]
-    #         print yearMap[year]['strings'][tweet]
     return
 
 def synonym(word):
@@ -92,7 +82,7 @@ def get_hosts(year):
 
     strings = yearMap[year]['strings']
     hostPattern = re.compile(r'hosts?', re.IGNORECASE)
-    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') 
 
     host_mentions = Counter()
     for tweet in strings:
@@ -124,7 +114,6 @@ def get_awards(year):
 
     for i in range(len(strings)):
         match = re.findall(genAwardPattern, strings[i])
-        # matches = [m for m in match]
         match = (w[0].lower()+w[1].lower() for w in match)
         for m in match:
             award_mentions[m] += 1
@@ -163,12 +152,8 @@ def get_awards(year):
     return awards
 
 def get_all(year):
-    #global all_nominees
-    #global all_presenters
-    #global all_winners
+
     global yearMap
-    #if len(list(all_nominees))>0:
-    #   return
 
     if year not in yearMap.keys():
         prep_year(year)
@@ -232,9 +217,7 @@ def get_all(year):
     for award in OFFICIAL_AWARDS:
         winnerList = []
         sortedWinners = potentialWinners[award].most_common()
-        #if award == "best performance by an actress in a television series - comedy or musical":
-            #for name in curr_noms:
-               # print name[0]
+
         for n in sortedWinners:
             add = True
             tokens = wordpunct_tokenize(n[0])
@@ -291,12 +274,9 @@ def get_all(year):
         else:
             presenters[award] = award_preses[0:2]
     
-    #all_nominees = nominees
     yearMap[year]['nominees'] = nominees
     yearMap[year]['presenters'] = presenters
     yearMap[year]['winners'] = winners
-    #all_presenters = presenters
-    #all_winners = winners
     return
 
 # Takes the top *number* unigrams or n-grams, depending on ratio
@@ -340,19 +320,12 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     #Your code here
-    #global all_nominees
     global yearMap
     try:
         all_nominees = yearMap[year]['nominees']
     except KeyError:
         get_all(year)
         all_nominees = yearMap[year]['nominees']
-    #if len(list(all_nominees)) == 0:
-    #   get_all(year)
-
-    #nominees = {}
-    #for award in all_nominees.keys():
-    #    nominees[award] = all_nominees[award]
 
     return all_nominees
     
@@ -368,8 +341,7 @@ def get_winner(year):
     except KeyError:
         get_all(year)
         all_winners = yearMap[year]['winners']
-    #if len(list(all_winners)) == 0:
-    #    get_all(year)
+
 
     winners = {}
     for award in all_winners.keys():
@@ -385,41 +357,16 @@ def get_presenters(year):
     name of this function or what it returns.'''
     # Your code here
     global yearMap
-    #global all_presenters
     try:
         all_presenters = yearMap[year]['presenters']
     except KeyError:
         get_all(year)
         all_presenters = yearMap[year]['presenters']
-    #if len(list(all_presenters)) == 0:
-    #    get_all(year)
     
     return all_presenters
 
+
 def best_dressed(year):
-    if year not in yearMap.keys():
-        prep_year(year)
-
-    strings = yearMap[year]['strings']
-    dressPattern = re.compile(r'dress', re.IGNORECASE)
-    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)?
-    stoplist = ['globes','golden','best','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
-
-    dress_mentions = Counter()
-    for tweet in strings:
-        if re.search(dressPattern, tweet):
-            matches = re.findall(namePattern, tweet)
-            matches = (w.lower() for w in matches)
-            for match in matches:
-                match_words = wordpunct_tokenize(match)
-                if match_words[0] not in stoplist and match_words[1] not in stoplist:
-                    dress_mentions[match] += 1
-
-    best_dress = dress_mentions.most_common(1)
-
-    return best_dress[0][0]
-
-def best_dressed_v2(year):
     if year not in yearMap.keys():
         prep_year(year)
 
@@ -427,8 +374,7 @@ def best_dressed_v2(year):
     dressPattern = re.compile(r'(dress)|(red carpet)|(redcarpet)', re.IGNORECASE)
     posPattern = re.compile(r'(best)|(beautiful)|(stun)|(love)', re.IGNORECASE)
     negPattern = re.compile(r'(worst)|(bad)|(ugly)|(hate)', re.IGNORECASE)
-    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)? '[A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?'
-    #namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?')
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') 
     stoplist = ['new','red','carpet','redcarpet','globes','golden','best','worst','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
 
     dress_mentions = Counter()
@@ -440,7 +386,7 @@ def best_dressed_v2(year):
             matches = (w.lower() for w in matches)
             for match in matches:
                 match_words = wordpunct_tokenize(match)
-                #print match_words
+   
                 if match_words[0] not in stoplist and match_words[1] not in stoplist:
                     dress_mentions[match] += 1
                     if re.search(posPattern, tweet):
@@ -499,9 +445,6 @@ def main():
     # Your code here
     print "Welcome to the Golden Globes API"
     
-    #pre_ceremony()
-
-    #print "Ok, I'm ready."
     year = get_year()
 
     while True:
@@ -511,7 +454,7 @@ def main():
         print "3: Get winners"
         print "4: Get host(s)"
         print "5: Get presenters"
-        print "6: Get best dressed"
+        print "6: Get red carpet results"
         print "7: Change year"
         print "8: Exit"
 
@@ -538,18 +481,15 @@ def main():
             print "\nGetting presenters"
             result = get_presenters(year)
         elif func == "6":
-            print "\nGetting best dressed"
-            print best_dressed(year)
+            print "\nGetting red carpet results"
+            best, worst, discuss = best_dressed(year)
+            print "Best dressed: " + best
+            print "Worst dressed: " + worst
+            print "Most discussed: " + discuss
         elif func == "7":
             year = get_year()
         elif func == "8":
             break
-        elif func == "9":
-            print "\nGetting red carpet results"
-            best, worst, discuss = best_dressed_v2(year)
-            print "Best dressed: " + best
-            print "Worst dressed: " + worst
-            print "Most discussed: " + discuss
 
 
         if result != 0:
@@ -581,6 +521,7 @@ def get_year():
     while True:
         year = raw_input("What year would you like me to look into?\n")
         if os.path.exists("./gg%s.json" %year):
+            print "Getting %s data. Please wait." %year
             prep_year(year)
             return year
         else:
