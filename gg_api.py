@@ -14,10 +14,11 @@ yearMap = {}
 reader = None
 docs = None
 # all the nominees
-all_nominees = {}
-all_winners = {}
-all_presenters = {}
+#all_nominees = {}
+#all_winners = {}
+#all_presenters = {}
 
+synonyms = {'tv':'television','movie':'film','motion':'film','picture':None,'show':'television','dramatic':'drama','funny':'comedy','animation':'animated','tune':'song','script':'screenplay','writing':'screenplay','music':'score','miniseries':'mini'}
 
 #award names mapped to list of tweet indices about that award
 tweetsSortedByAward = {}
@@ -33,6 +34,7 @@ tweetsSortedByAward = {}
 # and puts the tweet index in a list attached to that award, in the dictionary tweetsSortedByAward.
 def sortTweets(year):
     global tweetsSortedByAward
+    global yearMap
     tweetsSortedByAward = {}
     for award in OFFICIAL_AWARDS:
         tweetsSortedByAward[award] = []
@@ -40,26 +42,47 @@ def sortTweets(year):
     strings = yearMap[year]['strings']
     isAwardPattern = re.compile(r'best|award', re.IGNORECASE)
     # remove stoplisted words from the sets we will compare to the tweets, and then make a set out of these tokenized versions
-    awardSets = [set(w for w in lst if w not in stopwords.words('english') and w is not "-") for lst in jsonTokenizer(OFFICIAL_AWARDS)]
+    awardSyns = [set(synonym(w) for w in lst if w not in stopwords.words('english') and w is not "-" and w is not ".") for lst in jsonTokenizer(OFFICIAL_AWARDS)]
 
     for j in range(len(strings)):
         tweet = strings[j]
         if re.search(isAwardPattern, tweet):
             tweetTokenized = [w.lower() for w in wordpunct_tokenize(tweet)]
-            max = 1
-            bestIndex = []
-            tweetSet = set(tweetTokenized)
-            for i in range(len(awardSets)):
-                currLen = len(tweetSet & awardSets[i])
-                if currLen > max:
-                    max = currLen
-                    bestIndex = [i]
-                # elif currLen == max:
-                #     bestIndex.append(i)
-            if bestIndex:
-                for index in bestIndex:
-                    tweetsSortedByAward[OFFICIAL_AWARDS[index]].append(j)
+            best_ratio = 0
+            best_overlap = 0
+            bestIndex = -1
+            tweetSyns = set([synonym(w) for w in tweetTokenized])
+            for i in range(len(awardSyns)):
+                curr_overlap = len(tweetSyns & awardSyns[i])
+                if curr_overlap < 2:
+                    continue
+                if curr_overlap > best_overlap:
+                    bestIndex = i
+                    best_overlap = curr_overlap
+                    best_ratio = 1.0 * curr_overlap / len(awardSyns[i])
+                elif curr_overlap == best_overlap:
+                    curr_ratio = 1.0 * curr_overlap / len(awardSyns[i])
+                    if curr_ratio > best_ratio:
+                        best_ratio = curr_ratio
+                        bestIndex = i
+            if bestIndex > -1:
+                tweetsSortedByAward[OFFICIAL_AWARDS[bestIndex]].append(j)
+
+    # for i in range(3):
+    #     award = OFFICIAL_AWARDS[i]
+    #     print award
+    #     for j in range(4):
+    #         tweet = tweetsSortedByAward[award][j]
+    #         print yearMap[year]['strings'][tweet]
     return
+
+def synonym(word):
+    global synonyms
+    try:
+        syn = synonyms[word]
+    except KeyError:
+        syn = word
+    return syn
 
 def get_hosts(year):
     '''Hosts is a list of one or more strings. Do NOT change the name
@@ -104,12 +127,11 @@ def get_awards(year):
         # matches = [m for m in match]
         match = (w[0].lower()+w[1].lower() for w in match)
         for m in match:
-
             award_mentions[m] += 1
 
     awards_tuples = award_mentions.most_common()
 
-    reject = re.compile(r',|\"|\'|\(')
+    reject = re.compile(r',|\"|\'|\(|#|!|\d|/|@|&|\$|\^|%|:|;|\.|(\w-)|  ')
     awards_tuples_filter = []
     for a in awards_tuples:
         if not re.search(reject, a[0]):
@@ -141,11 +163,12 @@ def get_awards(year):
     return awards
 
 def get_all(year):
-    global all_nominees
-    global all_presenters
-    global all_winners
-    if len(list(all_nominees))>0:
-        return
+    #global all_nominees
+    #global all_presenters
+    #global all_winners
+    global yearMap
+    #if len(list(all_nominees))>0:
+    #   return
 
     if year not in yearMap.keys():
         prep_year(year)
@@ -268,9 +291,12 @@ def get_all(year):
         else:
             presenters[award] = award_preses[0:2]
     
-    all_nominees = nominees
-    all_presenters = presenters
-    all_winners = winners
+    #all_nominees = nominees
+    yearMap[year]['nominees'] = nominees
+    yearMap[year]['presenters'] = presenters
+    yearMap[year]['winners'] = winners
+    #all_presenters = presenters
+    #all_winners = winners
     return
 
 # Takes the top *number* unigrams or n-grams, depending on ratio
@@ -314,24 +340,36 @@ def get_nominees(year):
     names as keys, and each entry a list of strings. Do NOT change
     the name of this function or what it returns.'''
     #Your code here
-    global all_nominees
-    if len(list(all_nominees)) == 0:
+    #global all_nominees
+    global yearMap
+    try:
+        all_nominees = yearMap[year]['nominees']
+    except KeyError:
         get_all(year)
+        all_nominees = yearMap[year]['nominees']
+    #if len(list(all_nominees)) == 0:
+    #   get_all(year)
 
-    nominees = {}
-    for award in all_nominees.keys():
-        nominees[award] = all_nominees[award]
+    #nominees = {}
+    #for award in all_nominees.keys():
+    #    nominees[award] = all_nominees[award]
 
-    return nominees
+    return all_nominees
     
 
 def get_winner(year):
     '''Winners is a dictionary with the hard coded award
     names as keys, and each entry containing a single string.
     Do NOT change the name of this function or what it returns.'''
-    global all_winners
-    if len(list(all_winners)) == 0:
+    #global all_winners
+    global yearMap
+    try:
+        all_winners = yearMap[year]['winners']
+    except KeyError:
         get_all(year)
+        all_winners = yearMap[year]['winners']
+    #if len(list(all_winners)) == 0:
+    #    get_all(year)
 
     winners = {}
     for award in all_winners.keys():
@@ -346,9 +384,15 @@ def get_presenters(year):
     names as keys, and each entry a list of strings. Do NOT change the
     name of this function or what it returns.'''
     # Your code here
-    global all_presenters
-    if len(list(all_presenters)) == 0:
+    global yearMap
+    #global all_presenters
+    try:
+        all_presenters = yearMap[year]['presenters']
+    except KeyError:
         get_all(year)
+        all_presenters = yearMap[year]['presenters']
+    #if len(list(all_presenters)) == 0:
+    #    get_all(year)
     
     return all_presenters
 
@@ -498,13 +542,15 @@ def get_year():
             return year
         else:
             print "Please make sure gg%s.json exists and is inside this folder" %year
-
     return year
 
 def prep_year(year):
     global yearMap
-    yearMap[year] = {}
-    yearMap[year]['strings'] = jsonStrings('gg'+year+'.json')
+    try:
+        yearMap[year]
+    except KeyError:
+        yearMap[year] = {}
+        yearMap[year]['strings'] = jsonStrings('gg'+year+'.json')
     
 
 if __name__ == '__main__':
