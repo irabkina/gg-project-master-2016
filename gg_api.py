@@ -458,7 +458,7 @@ def main():
         print "7: Change year"
         print "8: Exit"
 
-        choices = ["1","2","3","4","5","6", "7","8","9"]
+        choices = ["1","2","3","4","5","6", "7","8"]
 
         func = raw_input("Enter choice number: ")
         while func not in choices:
