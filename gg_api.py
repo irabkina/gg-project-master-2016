@@ -139,7 +139,7 @@ def get_awards(year):
 
     awards_tuples = awards_tuples_filter
 
-    awards_tokenized = jsonTokenizer([a[0] for a in awards_tuples])
+    awards_tokenized = jsonTokenizer([synonym(a[0]) for a in awards_tuples])
 
     awards_sets = [set(a) for a in awards_tokenized]
 
@@ -148,7 +148,7 @@ def get_awards(year):
     for i in range(len(awards_sets)):
         include = True
         for j in range(len(awards_sets)):
-            if awards_sets[i] < awards_sets[j] and awards_tuples[j][1] > 1:
+            if i != j and awards_sets[i] <= awards_sets[j] and awards_tuples[j][1] > 1:
                 awards_tuples[j] = (awards_tuples[j][0], awards_tuples[i][1]+awards_tuples[j][1])
                 include = False
                 break
