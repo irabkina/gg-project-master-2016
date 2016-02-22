@@ -419,6 +419,42 @@ def best_dressed(year):
 
     return best_dress[0][0]
 
+def best_dressed_v2(year):
+    if year not in yearMap.keys():
+        prep_year(year)
+
+    strings = yearMap[year]['strings']
+    dressPattern = re.compile(r'(dress)|(red carpet)|(redcarpet)', re.IGNORECASE)
+    posPattern = re.compile(r'(best)|(beautiful)|(stun)|(love)', re.IGNORECASE)
+    negPattern = re.compile(r'(worst)|(bad)|(ugly)|(hate)', re.IGNORECASE)
+    namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*') #, re.IGNORECASE) # ?([A-Z]\w*)? '[A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?'
+    #namePattern = re.compile(r'[A-Z]\w* [A-Z]\w*( [^\.:&!\?,@#\(\)]*[A-Z]\w*)?')
+    stoplist = ['new','red','carpet','redcarpet','globes','golden','best','worst','movie','motion','picture','film','drama','comedy','musical','cecil','demille','award','tv','performance', 'actress','actor','television','feature','foreign','language','supporting','role','director','original','series']
+
+    dress_mentions = Counter()
+    dress_mentions_neg = Counter()
+    dress_mentions_pos = Counter()
+    for tweet in strings:
+        if re.search(dressPattern, tweet):
+            matches = re.findall(namePattern, tweet)
+            matches = (w.lower() for w in matches)
+            for match in matches:
+                match_words = wordpunct_tokenize(match)
+                #print match_words
+                if match_words[0] not in stoplist and match_words[1] not in stoplist:
+                    dress_mentions[match] += 1
+                    if re.search(posPattern, tweet):
+                        dress_mentions_pos[match] += 1
+                    if re.search(negPattern, tweet):
+                        dress_mentions_neg[match] += 1
+
+
+    discussed_dress = dress_mentions.most_common(1)
+    best_dress = dress_mentions_pos.most_common(1)
+    worst_dress = dress_mentions_neg.most_common(1)
+
+    return best_dress[0][0], worst_dress[0][0], discussed_dress[0][0]
+
 def jsonStrings (fileid):
     # using json libraries
     strings = []
@@ -479,7 +515,7 @@ def main():
         print "7: Change year"
         print "8: Exit"
 
-        choices = ["1","2","3","4","5","6", "7","8"]
+        choices = ["1","2","3","4","5","6", "7","8","9"]
 
         func = raw_input("Enter choice number: ")
         while func not in choices:
@@ -508,6 +544,13 @@ def main():
             year = get_year()
         elif func == "8":
             break
+        elif func == "9":
+            print "\nGetting red carpet results"
+            best, worst, discuss = best_dressed_v2(year)
+            print "Best dressed: " + best
+            print "Worst dressed: " + worst
+            print "Most discussed: " + discuss
+
 
         if result != 0:
             if isinstance(result, dict):
